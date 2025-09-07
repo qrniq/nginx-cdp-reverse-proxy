@@ -59,7 +59,7 @@ google-chrome-stable \
     --disable-component-cloud-policy \
     --disable-ipc-flooding-protection \
     --remote-debugging-address=0.0.0.0 \
-    --remote-debugging-port=9224 \
-    --user-data-dir=/data 
+    --remote-debugging-port=48401 \
+    --user-data-dir=/home/ec2-user/chrome-user-data 
 
 echo "Chrome started."
