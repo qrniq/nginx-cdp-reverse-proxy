@@ -1,0 +1,90 @@
+@startuml nginx-network-flow
+!theme plain
+title Chrome DevTools Proxy Network Flow
+
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+actor "Client\n(Browser/DevTools)" as Client
+cloud "NGINX Proxy" as Nginx {
+    component "Multi-Port Server\n(48300-48399)" as MultiPort
+    component "Main Server\n(Port 80)" as MainServer
+    
+    frame "URL Processing" {
+        component "Port Extractor\n(/port/\\d+)" as PortExtractor
+        component "URL Rewriter" as Rewriter
+    }
+    
+    frame "Connection Handling" {
+        component "WebSocket\nUpgrade Handler" as WSHandler
+        component "CORS Handler" as CORSHandler
+    }
+}
+
+cloud "Backend Services" as Backend {
+    component "Chrome Instance\nPort 1234" as Chrome1
+    component "Chrome Instance\nPort 5678" as Chrome2
+    component "Chrome Instance\nPort XXXX" as ChromeN
+}
+
+' Direct multi-port connections
+Client --> MultiPort : "Direct connection\nports 48300-48399"
+MultiPort --> PortExtractor : "Extract port from URL"
+PortExtractor --> Chrome1 : "Forward to\n127.0.0.1:extracted_port"
+
+' Main server connections
+Client --> MainServer : "HTTP requests\nPort 80"
+MainServer --> Rewriter : "URL rewriting rules"
+Rewriter --> PortExtractor : "Extract target port"
+
+' Different endpoint flows
+MainServer --> WSHandler : "WebSocket upgrades"
+MainServer --> CORSHandler : "JSON API requests"
+
+' Backend routing
+PortExtractor --> Chrome1 : "Route to port 1234"
+PortExtractor --> Chrome2 : "Route to port 5678" 
+PortExtractor --> ChromeN : "Route to port XXXX"
+
+' Flow annotations
+note right of PortExtractor
+  Regex: ~*/port/(?<port>\\d+)$
+  Extracts port number from URL path
+  Example: /port/1234 → 1234
+end note
+
+note right of Rewriter
+  URL Patterns:
+  • /port/(\\d+)/?(.*)$ → /
+  • /devtools/page/([^/]+)/port/(\\d+)/?(.*)$ → /devtools/page/$1
+  • /json/port/(\\d+)/?(.*)$ → /json
+  • /json/list/port/(\\d+)/?(.*)$ → /json/list
+  • /json/protocol/port/(\\d+)/?(.*)$ → /json/protocol
+end note
+
+note right of WSHandler
+  WebSocket Support:
+  • Upgrade header handling
+  • Connection upgrade mapping
+  • 24-hour timeouts
+  • Proxy cache bypass
+end note
+
+note right of CORSHandler
+  CORS Headers:
+  • Access-Control-Allow-Origin: *
+  • Methods: GET, POST, OPTIONS
+  • Preflight handling (OPTIONS)
+  • 20-day cache max-age
+end note
+
+' Location-specific flows
+MainServer ..> Chrome1 : "/ → DevTools frontend"
+MainServer ..> Chrome2 : "/devtools/page/* → DevTools page interface"
+MainServer ..> ChromeN : "/json → JSON API endpoints"
+
+' Health check
+Client --> MainServer : "GET /health"
+MainServer --> Client : "200 OK\nnginx proxy healthy"
+
+@enduml
