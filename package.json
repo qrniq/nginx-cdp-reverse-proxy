@@ -1,0 +1,24 @@
+{
+  "name": "scoket-js",
+  "version": "1.0.0",
+  "description": "Nginx reverse proxy for Chrome debugger WebSocket connections",
+  "main": "server.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "chrome-remote-interface": "^0.33.3",
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "keywords": [
+    "nginx",
+    "chrome",
+    "debugger",
+    "websocket",
+    "proxy"
+  ],
+  "author": "Terragon Labs",
+  "license": "MIT"
+}
